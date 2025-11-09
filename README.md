@@ -138,3 +138,6 @@ This value is **very low**, indicating that the predicted curve fits the observe
 
 This value is very small, indicating that the predicted parametric curve matches the observed data with high accuracy.
 
+
+<img width="1718" height="428" alt="image" src="https://github.com/user-attachments/assets/de7c5a67-dcc0-4ae6-8f18-2c244bddf4f9" />
+
