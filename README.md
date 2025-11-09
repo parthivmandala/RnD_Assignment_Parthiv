@@ -1,465 +1,140 @@
-Problem Statement
+# Assignment Submission – Research & Development / AI
 
-We are given a parametric curve defined as:
+## Problem Statement
 
-𝑥
-(
-𝑡
-)
-	
-=
-𝑋
-+
-𝑡
-cos
-⁡
-(
-𝜃
-)
-−
-𝑒
-𝑀
-∣
-𝑡
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-sin
-⁡
-(
-𝜃
-)
-,
+We are given a parametric curve:
 
+$$
+x(t) = X + t\cos(\theta) - e^{M|t|}\sin(0.3t)\sin(\theta)
+$$
 
-𝑦
-(
-𝑡
-)
-	
-=
-42
-+
-𝑡
-sin
-⁡
-(
-𝜃
-)
-+
-𝑒
-𝑀
-∣
-𝑡
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-cos
-⁡
-(
-𝜃
-)
-x(t)
-y(t)
-	​
+$$
+y(t) = 42 + t\sin(\theta) + e^{M|t|}\sin(0.3t)\cos(\theta)
+$$
 
-=X+tcos(θ)−e
-M∣t∣
-sin(0.3t)sin(θ),
-=42+tsin(θ)+e
-M∣t∣
-sin(0.3t)cos(θ)
-	​
+The unknown parameters are:
 
+$$
+\theta,\ M,\ X
+$$
 
-with unknown parameters:
+with the constraints:
 
-𝜃
-,
-  
-𝑀
-,
-  
-𝑋
-.
-θ,M,X.
+$$
+0^\circ < \theta < 50^\circ,\quad -0.05 < M < 0.05,\quad 0 < X < 100,\quad 6 < t < 60
+$$
 
-Given constraints:
+We are given `xy_data.csv` containing sampled points from this curve.  
+Our objective is to estimate the values of **θ, M, X** such that the model best fits the data by minimizing **L1 error**.
 
-0
-∘
-<
-𝜃
-<
-50
-∘
-,
-−
-0.05
-<
-𝑀
-<
-0.05
-,
-0
-<
-𝑋
-<
-100
-,
-6
-<
-𝑡
-<
-60.
-0
-∘
-<θ<50
-∘
-,−0.05<M<0.05,0<X<100,6<t<60.
+---
 
-We are provided a dataset xy_data.csv containing samples of this curve for 
-6
-<
-𝑡
-<
-60
-6<t<60.
-The task is to estimate the correct values of 
-𝜃
-,
-𝑀
-,
-𝑋
-θ,M,X such that the predicted curve matches the data with minimal L1 error.
+## Approach and Methodology
 
-Approach and Methodology (Explanation – Scoring Section)
-1. Understanding the Curve Structure
+### 1. Curve Decomposition
 
-The curve consists of:
+The curve can be interpreted as:
 
-A linear motion in direction 
-𝜃
-θ: 
-(
-𝑡
-cos
-⁡
-𝜃
-,
- 
-𝑡
-sin
-⁡
-𝜃
-)
-(tcosθ, tsinθ)
+| Component | Meaning |
+|----------|---------|
+| $(t\cos\theta,\ t\sin\theta)$ | Linear direction movement |
+| $A(t)=e^{M|t|}\sin(0.3t)$ | Oscillatory displacement term |
+| $(X,42)$ | Translation offset |
 
-A vertical sinusoidal displacement modulated by exponential scaling:
+So internally, each point can be viewed as:
 
-𝐴
-(
-𝑡
-)
-=
-𝑒
-𝑀
-∣
-𝑡
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-A(t)=e
-M∣t∣
-sin(0.3t)
+$$
+(t,\ A(t))
+$$
 
-A constant translation (offset): 
-(
-𝑋
-,
-42
-)
-(X,42)
+### 2. Inverse Mapping (Recovering Internal Coordinates)
 
-This means each data point 
-(
-𝑥
-,
-𝑦
-)
-(x,y) can be converted back to internal coordinates 
-(
-𝑡
-,
-𝐴
-(
-𝑡
-)
-)
-(t,A(t)) using rotation.
+For any guess of \( \theta \) and \( X \):
 
-2. Undoing the Rotation and Translation
+$$
+u = x - X,\quad v = y - 42
+$$
 
-For any guess of 
-𝜃
-θ and 
-𝑋
-X:
+Reverse rotation:
 
-𝑢
-=
-𝑥
-−
-𝑋
-,
-𝑣
-=
-𝑦
-−
-42
-u=x−X,v=y−42
+$$
+t = u\cos(\theta) + v\sin(\theta)
+$$
+$$
+A_{obs} = -u\sin(\theta) + v\cos(\theta)
+$$
 
-Apply rotation by 
-−
-𝜃
-−θ:
+### 3. Solving for M
 
-𝑡
-=
-𝑢
-cos
-⁡
-𝜃
-+
-𝑣
-sin
-⁡
-𝜃
-t=ucosθ+vsinθ
-𝐴
-obs
-=
-−
-𝑢
-sin
-⁡
-𝜃
-+
-𝑣
-cos
-⁡
-𝜃
-A
-obs
-	​
+From:
 
-=−usinθ+vcosθ
-
-If 
-𝜃
-θ and 
-𝑋
-X are correct, 
-𝑡
-t should lie within 
-(
-6
-,
-60
-)
-(6,60) and 
-𝐴
-obs
-A
-obs
-	​
-
- should match the model 
-𝐴
-(
-𝑡
-)
-A(t).
-
-3. Solving for 
-𝑀
-M
-
-From the equation:
-
-𝐴
-(
-𝑡
-)
-=
-𝑒
-𝑀
-∣
-𝑡
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-A(t)=e
-M∣t∣
-sin(0.3t)
+$$
+A(t) = e^{M|t|}\sin(0.3t)
+$$
 
 Taking log:
 
-ln
-⁡
-(
-∣
-𝐴
-obs
-∣
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-∣
-)
-≈
-𝑀
-∣
-𝑡
-∣
-ln(
-∣sin(0.3t)∣
-∣A
-obs
-	​
+$$
+\ln\left(\frac{|A_{obs}|}{|\sin(0.3t)|}\right) \approx M|t|
+$$
 
-∣
-	​
+This forms a **linear regression** problem to estimate \( M \).
 
-)≈M∣t∣
+### 4. Parameter Search Strategy
 
-This becomes a straight line in 
-(
-∣
-𝑡
-∣
-,
- 
-log
-⁡
-(
-⋅
-)
-)
-(∣t∣, log(⋅)) → we use least-squares regression to solve for 
-𝑀
-M.
+- Grid search over \(\theta\) and \(X\)
+- For each pair, compute \(M\) from regression
+- Evaluate mean L1 error
+- Select parameters with minimum error
 
-4. Parameter Search
+---
 
-A coarse-to-fine grid search was performed over 
-𝜃
-θ and 
-𝑋
-X.
+## Final Estimated Parameters
 
-For each pair, 
-𝑀
-M was solved using the log-linear method.
+| Parameter | Value |
+|----------|--------|
+| θ | **30.000503°** (≈ 0.523608 radians) |
+| M | **0.030108** |
+| X | **54.981792** |
 
-The model with minimum L1 error was selected.
+---
 
-5. Final Estimated Parameters
-Parameter	Value
+## Final Curve
+$$
+\left(t*\cos(0.523608)-e^{0.030108|t|}\cdot\sin(0.3t)\sin(0.523608)+54.981792,\ 42+t*\sin(0.523608)+e^{0.030108|t|}\cdot\sin(0.3t)\cos(0.523608)\right)
+$$
 
-𝜃
-θ	30.000503° (≈ 0.523608 rad)
+---
 
-𝑀
-M	0.030108
+## L1 Error Evaluation
 
-𝑋
-X	54.981792
-Final Curve (Submission Format Required)
-(
-𝑡
-cos
-⁡
-(
-0.523608
-)
-−
-𝑒
-0.030108
-∣
-𝑡
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-sin
-⁡
-(
-0.523608
-)
-+
-54.981792
-,
-  
-42
-+
-𝑡
-sin
-⁡
-(
-0.523608
-)
-+
-𝑒
-0.030108
-∣
-𝑡
-∣
-sin
-⁡
-(
-0.3
-𝑡
-)
-cos
-⁡
-(
-0.523608
-)
-)
-(tcos(0.523608)−e
-0.030108∣t∣
-sin(0.3t)sin(0.523608)+54.981792,42+tsin(0.523608)+e
-0.030108∣t∣
-sin(0.3t)cos(0.523608))
-	​
+To evaluate how closely the predicted curve matches the observed data, we use the **L1 distance** between corresponding points.
 
-Evaluation (L1 Score)
-Metric	Performance
-Mean L1 error in internal A-space	≈ 0.01439
-Mean L1 error in (x,y) space	≈ 0.01966
+For each point, the L1 distance is computed as:
 
-This is very low → indicating a very accurate parameter recovery.
+$$
+d_i = \left| x_{\text{obs},i} - x_{\text{pred},i} \right| + \left| y_{\text{obs},i} - y_{\text{pred},i} \right|
+$$
+
+The overall fitting score is the mean of all such distances:
+
+$$
+\text{L1 Score} = \frac{1}{N}\sum_{i=1}^{N} d_i
+$$
+
+Using the estimated parameters:
+
+$$
+\theta = 30.000503^\circ,\quad M = 0.030108,\quad X = 54.981792
+$$
+
+The calculated L1 score is:
+
+$$
+\boxed{\text{L1 Score} = 0.01966}
+$$
+
+This value is **very low**, indicating that the predicted curve fits the observed dataset **very accurately**.
+
+This value is very small, indicating that the predicted parametric curve matches the observed data with high accuracy.
+
